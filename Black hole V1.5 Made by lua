@@ -1,9 +1,14 @@
-local Players = game:GetService("Players")
+ive = false
+    end
+end)
+
+toggleBlackHole()local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local radius = 10
+local angle = 1
+local radius = 1000
 local maxRadius = 250 -- Radius maksimum black hole
 local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
@@ -75,22 +80,27 @@ local function ForcePart(v)
             end
             v.CanCollide = false
             
-            -- Menggunakan AlignPosition atau BodyPosition untuk menarik part ke pusat Black Hole
+            -- Menggunakan AlignPosition untuk menarik part ke pusat Black Hole
             local AlignPosition = Instance.new("AlignPosition", v)
             local Attachment2 = Instance.new("Attachment", v)
-            AlignPosition.MaxForce = math.huge -- Menambah kekuatan tarik
-            AlignPosition.MaxVelocity = math.huge -- Memastikan objek bergerak cepat
-            AlignPosition.Responsiveness = 1000 -- Respons cepat
+            AlignPosition.MaxForce = math.huge
+            AlignPosition.MaxVelocity = math.huge
+            AlignPosition.Responsiveness = 500
             AlignPosition.Attachment0 = Attachment2
             AlignPosition.Attachment1 = Attachment1
-            frozenParts[v] = AlignPosition  -- Menyimpan objek yang dibekukan
+            
+            -- Menyimpan part yang sedang ditarik agar bisa dibekukan setelah mencapai titik tertentu
+            frozenParts[v] = AlignPosition
         end
     end
 end
 
-local function unfreezePart(v)
+local function freezePart(v)
     if frozenParts[v] then
-        frozenParts[v]:Destroy() -- Menghapus AlignPosition dan melepaskan objek
+        -- Membekukan part pada posisi terakhir yang dicapai oleh Black Hole
+        local AlignPosition = frozenParts[v]
+        AlignPosition.MaxForce = 0 -- Menonaktifkan tarikan
+        AlignPosition.MaxVelocity = 0 -- Menghentikan gerakan
         frozenParts[v] = nil
     end
 end
@@ -111,17 +121,18 @@ local function toggleBlackHole()
 
         spawn(function()
             while blackHoleActive and RunService.RenderStepped:Wait() do
-                -- Mengatur posisi pusat black hole dengan lebih agresif
-                local offsetX = math.cos(math.rad(1)) * radius
-                local offsetZ = math.sin(math.rad(1)) * radius
+                angle = angle + math.rad(2)
+
+                local offsetX = math.cos(angle) * radius
+                local offsetZ = math.sin(angle) * radius
 
                 Attachment1.WorldCFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
             end
         end)
     else
-        -- Ketika Black Hole dimatikan, part tetap beku di tempat terakhir
+        -- Ketika black hole dimatikan, bekukan semua part yang terpengaruh
         for part, _ in pairs(frozenParts) do
-            unfreezePart(part)
+            freezePart(part)
         end
         Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
@@ -139,6 +150,10 @@ local window = library:Window("Projeto LKB")
 
 window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
    radius = Value
+end)
+
+window:Slider("Blackhole Range", 100, 1000000, blackHoleRange, function(Value)
+    blackHoleRange = Value -- Mengatur jarak efek black hole
 end)
 
 window:Toggle("Blackhole", true, function(Value)
