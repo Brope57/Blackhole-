@@ -4,11 +4,11 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 local angle = 1
-local radius = 1000
-local maxRadius = 250 -- Radius maksimum black hole
+local radius = 1000000
+local maxRadius = 200 -- Radius maksimum black hole
 local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
-local frozenParts = {} -- Menyimpan part yang dibekukan
+local attachedParts = {} -- Menyimpan part yang sudah tertarik
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -76,28 +76,18 @@ local function ForcePart(v)
             end
             v.CanCollide = false
             
-            -- Menggunakan AlignPosition untuk menarik part ke pusat Black Hole
+            -- Menarik part ke pusat Black Hole dengan responsif yang lebih tinggi
             local AlignPosition = Instance.new("AlignPosition", v)
             local Attachment2 = Instance.new("Attachment", v)
             AlignPosition.MaxForce = math.huge
             AlignPosition.MaxVelocity = math.huge
-            AlignPosition.Responsiveness = 500
+            AlignPosition.Responsiveness = 1000 -- Meningkatkan responsiveness
             AlignPosition.Attachment0 = Attachment2
             AlignPosition.Attachment1 = Attachment1
-            
-            -- Menyimpan part yang sedang ditarik agar bisa dibekukan setelah mencapai titik tertentu
-            frozenParts[v] = AlignPosition
-        end
-    end
-end
 
-local function freezePart(v)
-    if frozenParts[v] then
-        -- Membekukan part pada posisi terakhir yang dicapai oleh Black Hole
-        local AlignPosition = frozenParts[v]
-        AlignPosition.MaxForce = 0 -- Menonaktifkan tarikan
-        AlignPosition.MaxVelocity = 0 -- Menghentikan gerakan
-        frozenParts[v] = nil
+            -- Menyimpan part yang sudah tertarik agar tidak kembali
+            attachedParts[v] = true
+        end
     end
 end
 
@@ -126,10 +116,6 @@ local function toggleBlackHole()
             end
         end)
     else
-        -- Ketika black hole dimatikan, bekukan semua part yang terpengaruh
-        for part, _ in pairs(frozenParts) do
-            freezePart(part)
-        end
         Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
 end
