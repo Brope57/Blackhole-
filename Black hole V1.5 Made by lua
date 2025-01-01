@@ -1,4 +1,4 @@
-local Players = game:GetService("Players")
+lllocal Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
@@ -6,9 +6,9 @@ local StarterGui = game:GetService("StarterGui")
 
 local angle = 1
 local radius = 10
-local maxRadius = 200 -- Meningkatkan radius maksimum ke 200
+local maxRadius = 300 -- Meningkatkan radius maksimum ke 200
 local blackHoleActive = false
-local blackHoleRange = 10000 -- Jarak efek Black Hole
+local blackHoleRange = 10000000 -- Jarak efek Black Hole
 
 local function sendNotification(title, text, duration)
     StarterGui:SetCore("SendNotification", {
