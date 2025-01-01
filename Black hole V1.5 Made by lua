@@ -4,9 +4,9 @@ local Workspace = game:GetService("Workspace")
 
 local angle = 1
 local radius = 10
-local maxRadius = 250
+local maxRadius = 280
 local blackHoleActive = false
-local simulationDistance = 10000000 -- Jarak simulasi black hole
+local simulationDistance = 100000 -- Jarak simulasi black hole
 
 local blackHoleAnchor = Instance.new("Part")
 blackHoleAnchor.Anchored = true
