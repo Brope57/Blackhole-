@@ -2,25 +2,12 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
 
 local angle = 1
 local radius = 10
 local maxRadius = 200 -- Meningkatkan radius maksimum ke 200
 local blackHoleActive = false
-local blackHoleRange = 100000 -- Jarak efek Black Hole diubah ke 100000
-
--- Anti-sit
-local function preventSit()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
-    
-    humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
-        if humanoid.Sit then
-            humanoid.Sit = false -- Mencegah karakter untuk duduk
-        end
-    end)
-end
+local blackHoleRange = 1000000 -- Jarak efek Black Hole
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -130,22 +117,10 @@ end
 
 LocalPlayer.CharacterAdded:Connect(function()
     humanoidRootPart, Attachment1 = setupPlayer()
-    preventSit() -- Memanggil fungsi anti-sit saat karakter ditambahkan
     if blackHoleActive then
         toggleBlackHole()
     end
 end)
-
--- Menambahkan fitur tembus untuk semua part yang bisa diduduki
-local function makePartsTepus()
-    for _, part in ipairs(Workspace:GetDescendants()) do
-        if part:IsA("Part") and part.CanCollide and part.Parent:FindFirstChild("Humanoid") then
-            part.CanCollide = false
-        end
-    end
-end
-
-makePartsTepus()
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/miroeramaa/TurtleLib/main/TurtleUiLib.lua"))()
 local window = library:Window("Projeto LKB")
