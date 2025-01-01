@@ -1,23 +1,29 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
 local angle = 1
 local radius = 10
-local maxRadius = 250 -- Meningkatkan radius maksimum ke 200
+local maxRadius = 250 -- Radius maksimum black hole
+local blackHoleRange = 10000000 -- Jarak efek Black Hole
 local blackHoleActive = false
-local blackHoleRange = 100000000 -- Jarak efek Black Hole
-local simulationDistance = 100000000 -- Simulation distance
 
--- Black hole anchor setup
-local blackHoleAnchor = Instance.new("Part")
-blackHoleAnchor.Anchored = true
-blackHoleAnchor.CanCollide = false
-blackHoleAnchor.Transparency = 1
-blackHoleAnchor.Size = Vector3.new(1, 1, 1)
-blackHoleAnchor.Parent = Workspace
+local function setupPlayer()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local Attachment1 = Instance.new("Attachment", blackHoleAnchor)
+    local Folder = Instance.new("Folder", Workspace)
+    local Part = Instance.new("Part", Folder)
+    local Attachment1 = Instance.new("Attachment", Part)
+    Part.Anchored = true
+    Part.CanCollide = false
+    Part.Transparency = 1
+
+    return humanoidRootPart, Attachment1
+end
+
+local humanoidRootPart, Attachment1 = setupPlayer()
 
 if not getgenv().Network then
     getgenv().Network = {
@@ -34,8 +40,9 @@ if not getgenv().Network then
     end
 
     local function EnablePartControl()
+        LocalPlayer.ReplicationFocus = Workspace
         RunService.Heartbeat:Connect(function()
-            sethiddenproperty(Players.LocalPlayer, "SimulationRadius", simulationDistance)
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
             for _, part in pairs(Network.BaseParts) do
                 if part:IsDescendantOf(Workspace) then
                     part.Velocity = Network.Velocity
@@ -49,7 +56,7 @@ end
 
 local function ForcePart(v)
     if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
-        if (v.Position - blackHoleAnchor.Position).Magnitude <= blackHoleRange then -- Batas jarak Black Hole
+        if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then -- Batas jarak Black Hole
             for _, x in next, v:GetChildren() do
                 if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
                     x:Destroy()
@@ -100,22 +107,33 @@ local function toggleBlackHole()
                 local offsetX = math.cos(angle) * radius
                 local offsetZ = math.sin(angle) * radius
 
-                blackHoleAnchor.Position = blackHoleAnchor.Position + Vector3.new(offsetX, 0, offsetZ)
+                Attachment1.WorldCFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
             end
         end)
     else
-        blackHoleAnchor.Position = Vector3.new(0, -1000, 0)
+        Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
 end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    humanoidRootPart, Attachment1 = setupPlayer()
+    if blackHoleActive then
+        toggleBlackHole()
+    end
+end)
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/miroeramaa/TurtleLib/main/TurtleUiLib.lua"))()
 local window = library:Window("Projeto LKB")
 
-window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value) -- Radius maksimum ditingkatkan ke 200
+window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
    radius = Value
 end)
 
-window:Toggle("Blackhole", true, function(Value) -- Black hole aktif setelah script dijalankan
+window:Slider("Blackhole Range", 100, 100000, blackHoleRange, function(Value)
+    blackHoleRange = Value -- Mengatur jarak efek black hole
+end)
+
+window:Toggle("Blackhole", true, function(Value)
     if Value then
         toggleBlackHole()
     else
@@ -123,13 +141,4 @@ window:Toggle("Blackhole", true, function(Value) -- Black hole aktif setelah scr
     end
 end)
 
-spawn(function()
-    while true do
-        RunService.RenderStepped:Wait()
-        if blackHoleActive then
-            angle = angle + math.rad(1)
-        end
-    end
-end)
-
-toggleBlackHole() -- Menyalakan black hole pada saat pertama kali dijalankan
+toggleBlackHole()
