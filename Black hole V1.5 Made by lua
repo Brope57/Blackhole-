@@ -3,8 +3,8 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local angle = 10
-local radius = 20
+local angle = 1
+local radius = 1000
 local maxRadius = 250 -- Radius maksimum black hole
 local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
