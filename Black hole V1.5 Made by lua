@@ -3,11 +3,14 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local angle = 1
-local radius = 1000
+local angle = 10
+local radius = 20
 local maxRadius = 250 -- Radius maksimum black hole
 local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
+local superRingRadius = 50 -- Radius maksimal tarikan untuk Super Ring
+local maxAttractionPower = 1000 -- Kekuatan maksimal tarikan
+local minAttractionPower = 100 -- Kekuatan minimal tarikan
 local frozenParts = {} -- Menyimpan part yang dibekukan
 
 local function setupPlayer()
@@ -26,40 +29,10 @@ end
 
 local humanoidRootPart, Attachment1 = setupPlayer()
 
-if not getgenv().Network then
-    getgenv().Network = {
-        BaseParts = {},
-        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
-    }
-
-    Network.RetainPart = function(part)
-        if typeof(part) == "Instance" and part:IsA("BasePart") and part:IsDescendantOf(Workspace) then
-            table.insert(Network.BaseParts, part)
-            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            part.CanCollide = false
-        end
-    end
-
-    local function EnablePartControl()
-        LocalPlayer.ReplicationFocus = Workspace
-        RunService.Heartbeat:Connect(function()
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) -- Meningkatkan jarak simulasi agar objek jauh tetap disimulasikan
-            for _, part in pairs(Network.BaseParts) do
-                if part:IsDescendantOf(Workspace) then
-                    part.Velocity = Network.Velocity
-                end
-            end
-        end)
-    end
-
-    EnablePartControl()
-end
-
+-- Black Hole functions
 local function ForcePart(v)
     if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
-        -- Menghitung jarak antara part dengan posisi Black Hole
         if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then
-            -- Menghapus gaya dan pengaruh lainnya dari part
             for _, x in next, v:GetChildren() do
                 if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
                     x:Destroy()
@@ -76,7 +49,6 @@ local function ForcePart(v)
             end
             v.CanCollide = false
             
-            -- Menggunakan AlignPosition atau BodyPosition untuk menarik part ke pusat Black Hole
             local AlignPosition = Instance.new("AlignPosition", v)
             local Attachment2 = Instance.new("Attachment", v)
             AlignPosition.MaxForce = math.huge
@@ -84,22 +56,38 @@ local function ForcePart(v)
             AlignPosition.Responsiveness = 500
             AlignPosition.Attachment0 = Attachment2
             AlignPosition.Attachment1 = Attachment1
-            frozenParts[v] = AlignPosition  -- Menyimpan objek yang dibekukan
+            frozenParts[v] = AlignPosition
         end
     end
 end
 
 local function unfreezePart(v)
     if frozenParts[v] then
-        frozenParts[v]:Destroy() -- Menghapus AlignPosition dan melepaskan objek
+        frozenParts[v]:Destroy()
         frozenParts[v] = nil
     end
 end
 
+-- Super Ring functions
+local function attractPartsToRing()
+    for _, part in ipairs(Workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Parent ~= LocalPlayer.Character then
+            local distance = (part.Position - humanoidRootPart.Position).Magnitude
+            if distance <= superRingRadius then
+                local attractionPower = math.lerp(minAttractionPower, maxAttractionPower, (superRingRadius - distance) / superRingRadius)
+                local direction = (humanoidRootPart.Position - part.Position).unit
+                local bodyForce = Instance.new("BodyForce", part)
+                bodyForce.Force = direction * attractionPower
+                game.Debris:AddItem(bodyForce, 0.1)
+            end
+        end
+    end
+end
+
+-- Toggle functions
 local function toggleBlackHole()
     blackHoleActive = not blackHoleActive
     if blackHoleActive then
-        -- Mengaktifkan efek Black Hole untuk menarik part
         for _, v in next, Workspace:GetDescendants() do
             ForcePart(v)
         end
@@ -121,13 +109,15 @@ local function toggleBlackHole()
             end
         end)
     else
-        -- Ketika Black Hole dimatikan, part tetap beku di tempat terakhir
         for part, _ in pairs(frozenParts) do
             unfreezePart(part)
         end
         Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
 end
+
+-- Run attractor for super ring
+RunService.Heartbeat:Connect(attractPartsToRing)
 
 LocalPlayer.CharacterAdded:Connect(function()
     humanoidRootPart, Attachment1 = setupPlayer()
@@ -136,6 +126,7 @@ LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
+-- GUI integration
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Brope57/GUI-Blackhole/refs/heads/main/GUI%20black%20hole%20Made%20by%20Lua%20v2"))()
 local window = library:Window("Projeto LKB")
 
@@ -144,7 +135,11 @@ window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
 end)
 
 window:Slider("Blackhole Range", 100, 1000000, blackHoleRange, function(Value)
-    blackHoleRange = Value -- Mengatur jarak efek black hole
+    blackHoleRange = Value
+end)
+
+window:Slider("Super Ring Radius", 1, 100, superRingRadius, function(Value)
+    superRingRadius = Value
 end)
 
 window:Toggle("Blackhole", true, function(Value)
