@@ -8,7 +8,7 @@ local radius = 20
 local maxRadius = 250 -- Radius maksimum black hole
 local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
-local superRingRadius = 50 -- Radius maksimal tarikan untuk Super Ring
+local superRingRadius = 1000000 -- Radius untuk menarik part (diperbesar)
 local maxAttractionPower = 1000 -- Kekuatan maksimal tarikan
 local minAttractionPower = 100 -- Kekuatan minimal tarikan
 local frozenParts = {} -- Menyimpan part yang dibekukan
@@ -116,15 +116,15 @@ local function toggleBlackHole()
     end
 end
 
--- Run attractor for super ring
-RunService.Heartbeat:Connect(attractPartsToRing)
-
-LocalPlayer.CharacterAdded:Connect(function()
-    humanoidRootPart, Attachment1 = setupPlayer()
-    if blackHoleActive then
-        toggleBlackHole()
-    end
-end)
+-- Toggle Super Ring function
+local function toggleSuperRing()
+    spawn(function()
+        while true do
+            attractPartsToRing()
+            RunService.RenderStepped:Wait()
+        end
+    end)
+end
 
 -- GUI integration
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Brope57/GUI-Blackhole/refs/heads/main/GUI%20black%20hole%20Made%20by%20Lua%20v2"))()
@@ -138,7 +138,7 @@ window:Slider("Blackhole Range", 100, 1000000, blackHoleRange, function(Value)
     blackHoleRange = Value
 end)
 
-window:Slider("Super Ring Radius", 1, 100, superRingRadius, function(Value)
+window:Slider("Super Ring Radius", 100, 1000000, superRingRadius, function(Value)
     superRingRadius = Value
 end)
 
@@ -148,6 +148,10 @@ window:Toggle("Blackhole", true, function(Value)
     else
         blackHoleActive = false
     end
+end)
+
+window:Button("Activate Super Ring", function()
+    toggleSuperRing()
 end)
 
 toggleBlackHole()
