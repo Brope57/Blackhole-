@@ -6,7 +6,7 @@ local LocalPlayer = Players.LocalPlayer
 local angle = 1
 local radius = 10
 local maxRadius = 250 -- Radius maksimum black hole
-local blackHoleRange = 10000000 -- Jarak efek Black Hole
+local blackHoleRange = 1000000 -- Jarak efek Black Hole
 local blackHoleActive = false
 
 local function setupPlayer()
@@ -42,7 +42,7 @@ if not getgenv().Network then
     local function EnablePartControl()
         LocalPlayer.ReplicationFocus = Workspace
         RunService.Heartbeat:Connect(function()
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) -- Set the simulation radius to handle distant parts
             for _, part in pairs(Network.BaseParts) do
                 if part:IsDescendantOf(Workspace) then
                     part.Velocity = Network.Velocity
@@ -72,16 +72,12 @@ local function ForcePart(v)
                 v:FindFirstChild("Torque"):Destroy()
             end
             v.CanCollide = false
-
-            -- Jika objek tidak goyang (seperti bangunan), gunakan BodyVelocity untuk menariknya
-            local bodyVelocity = Instance.new("BodyVelocity", v)
-            bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)  -- Mengatur gaya maksimum
-            bodyVelocity.Velocity = (humanoidRootPart.Position - v.Position).unit * 100  -- Kecepatan tarikan
-            bodyVelocity.P = 10000  -- Menambahkan kekuatan gaya agar objek cepat bergerak
-
-            -- Menambahkan Alignment untuk memastikan objek bergerak ke arah Black Hole
+            
+            local Torque = Instance.new("Torque", v)
+            Torque.Torque = Vector3.new(1000000, 1000000, 1000000)
             local AlignPosition = Instance.new("AlignPosition", v)
             local Attachment2 = Instance.new("Attachment", v)
+            Torque.Attachment0 = Attachment2
             AlignPosition.MaxForce = math.huge
             AlignPosition.MaxVelocity = math.huge
             AlignPosition.Responsiveness = 500
