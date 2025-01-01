@@ -9,7 +9,7 @@ local maxRadius = 250 -- Radius maksimum black hole
 local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
 local superRingRadius = 1000000 -- Radius untuk menarik part (diperbesar)
-local maxAttractionPower = 1000 -- Kekuatan maksimal tarikan
+local maxAttractionPower = 1000000 -- Kekuatan maksimal tarikan
 local minAttractionPower = 100 -- Kekuatan minimal tarikan
 local frozenParts = {} -- Menyimpan part yang dibekukan
 
