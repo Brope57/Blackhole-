@@ -2,12 +2,21 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
 
 local angle = 1
 local radius = 10
 local maxRadius = 200 -- Meningkatkan radius maksimum ke 200
 local blackHoleActive = false
-local blackHoleRange = 1000000 -- Jarak efek Black Hole
+local blackHoleRange = 10000 -- Jarak efek Black Hole
+
+local function sendNotification(title, text, duration)
+    StarterGui:SetCore("SendNotification", {
+        Title = title;
+        Text = text;
+        Duration = duration;
+    })
+end
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -90,6 +99,7 @@ end
 local function toggleBlackHole()
     blackHoleActive = not blackHoleActive
     if blackHoleActive then
+        sendNotification("Black Hole Activated", "The black hole effect is now active.", 5)
         for _, v in next, Workspace:GetDescendants() do
             ForcePart(v)
         end
@@ -111,6 +121,7 @@ local function toggleBlackHole()
             end
         end)
     else
+        sendNotification("Black Hole Deactivated", "The black hole effect is now off.", 5)
         Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
 end
@@ -129,7 +140,7 @@ window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value) -- Radius ma
    radius = Value
 end)
 
-window:Toggle("Blackhole", true, function(Value)
+window:Toggle("Blackhole", true, function(Value) -- Black hole aktif setelah script dijalankan
     if Value then
         toggleBlackHole()
     else
@@ -137,13 +148,15 @@ window:Toggle("Blackhole", true, function(Value)
     end
 end)
 
+sendNotification("Script Loaded", "Black hole script has been successfully loaded!", 5)
+
 spawn(function()
     while true do
         RunService.RenderStepped:Wait()
         if blackHoleActive then
-            angle = angle + math.rad(angleSpeed)
+            angle = angle + math.rad(1)
         end
     end
 end)
 
-toggleBlackHole()
+toggleBlackHole() -- Menyalakan black hole pada saat pertama kali dijalankan
