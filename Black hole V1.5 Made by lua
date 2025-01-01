@@ -3,10 +3,9 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local angle = 1
 local radius = 10
-local maxRadius = 260 -- Radius maksimum black hole
-local blackHoleRange = 1000000 -- Jarak efek Black Hole
+local maxRadius = 250 -- Radius maksimum black hole
+local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
 local frozenParts = {} -- Menyimpan part yang dibekukan
 
@@ -58,8 +57,7 @@ end
 local function ForcePart(v)
     if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
         -- Menghitung jarak antara part dengan posisi Black Hole
-        local distance = (v.Position - humanoidRootPart.Position).Magnitude
-        if distance <= blackHoleRange then
+        if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then
             -- Menghapus gaya dan pengaruh lainnya dari part
             for _, x in next, v:GetChildren() do
                 if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
@@ -80,9 +78,9 @@ local function ForcePart(v)
             -- Menggunakan AlignPosition atau BodyPosition untuk menarik part ke pusat Black Hole
             local AlignPosition = Instance.new("AlignPosition", v)
             local Attachment2 = Instance.new("Attachment", v)
-            AlignPosition.MaxForce = math.huge
-            AlignPosition.MaxVelocity = math.huge
-            AlignPosition.Responsiveness = 1000  -- Meningkatkan responsivitas agar lebih agresif
+            AlignPosition.MaxForce = math.huge -- Menambah kekuatan tarik
+            AlignPosition.MaxVelocity = math.huge -- Memastikan objek bergerak cepat
+            AlignPosition.Responsiveness = 1000 -- Respons cepat
             AlignPosition.Attachment0 = Attachment2
             AlignPosition.Attachment1 = Attachment1
             frozenParts[v] = AlignPosition  -- Menyimpan objek yang dibekukan
@@ -113,10 +111,9 @@ local function toggleBlackHole()
 
         spawn(function()
             while blackHoleActive and RunService.RenderStepped:Wait() do
-                angle = angle + math.rad(2)
-
-                local offsetX = math.cos(angle) * radius
-                local offsetZ = math.sin(angle) * radius
+                -- Mengatur posisi pusat black hole dengan lebih agresif
+                local offsetX = math.cos(math.rad(1)) * radius
+                local offsetZ = math.sin(math.rad(1)) * radius
 
                 Attachment1.WorldCFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
             end
@@ -142,10 +139,6 @@ local window = library:Window("Projeto LKB")
 
 window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
    radius = Value
-end)
-
-window:Slider("Blackhole Range", 100, 1000000, blackHoleRange, function(Value)
-    blackHoleRange = Value -- Mengatur jarak efek black hole
 end)
 
 window:Toggle("Blackhole", true, function(Value)
