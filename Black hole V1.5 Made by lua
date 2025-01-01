@@ -5,7 +5,7 @@ local LocalPlayer = Players.LocalPlayer
 
 local angle = 1
 local radius = 10
-local maxRadius = 280 -- Radius maksimum black hole
+local maxRadius = 250 -- Radius maksimum black hole
 local blackHoleRange = 1000000 -- Jarak efek Black Hole
 local blackHoleActive = false
 local frozenParts = {} -- Menyimpan part yang dibekukan
@@ -43,7 +43,7 @@ if not getgenv().Network then
     local function EnablePartControl()
         LocalPlayer.ReplicationFocus = Workspace
         RunService.Heartbeat:Connect(function()
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) -- Set the simulation radius to handle distant parts
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) -- Meningkatkan jarak simulasi agar objek jauh tetap disimulasikan
             for _, part in pairs(Network.BaseParts) do
                 if part:IsDescendantOf(Workspace) then
                     part.Velocity = Network.Velocity
@@ -57,8 +57,9 @@ end
 
 local function ForcePart(v)
     if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
-        if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then -- Batas jarak Black Hole
-            -- Menghapus pengaruh gaya lainnya
+        -- Menghitung jarak antara part dengan posisi Black Hole
+        if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then
+            -- Menghapus gaya dan pengaruh lainnya dari part
             for _, x in next, v:GetChildren() do
                 if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
                     x:Destroy()
