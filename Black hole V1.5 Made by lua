@@ -3,10 +3,10 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local angle = 1
-local radius = 10
+local angle = 10
+local radius = 20
 local maxRadius = 250 -- Radius maksimum black hole
-local blackHoleRange = 1000000 -- Jarak efek Black Hole
+local blackHoleRange = 1000000000 -- Jarak efek Black Hole
 local blackHoleActive = false
 local frozenParts = {} -- Menyimpan part yang dibekukan
 
@@ -136,7 +136,7 @@ LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/miroeramaa/TurtleLib/main/TurtleUiLib.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Brope57/GUI-Blackhole/refs/heads/main/GUI%20black%20hole%20Made%20by%20Lua%20v2"))()
 local window = library:Window("Projeto LKB")
 
 window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
