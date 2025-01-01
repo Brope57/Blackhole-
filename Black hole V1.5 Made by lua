@@ -5,8 +5,8 @@ local LocalPlayer = Players.LocalPlayer
 
 local angle = 1
 local radius = 10
-local maxRadius = 250 -- Radius maksimum black hole
-local blackHoleRange = 9000000 -- Jarak efek Black Hole
+local maxRadius = 280 -- Radius maksimum black hole
+local blackHoleRange = 1000000 -- Jarak efek Black Hole
 local blackHoleActive = false
 local frozenParts = {} -- Menyimpan part yang dibekukan
 
@@ -58,6 +58,7 @@ end
 local function ForcePart(v)
     if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
         if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then -- Batas jarak Black Hole
+            -- Menghapus pengaruh gaya lainnya
             for _, x in next, v:GetChildren() do
                 if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
                     x:Destroy()
@@ -74,7 +75,7 @@ local function ForcePart(v)
             end
             v.CanCollide = false
             
-            -- Menambahkan BodyPosition agar part tidak kembali ke tempat asal
+            -- Menggunakan AlignPosition atau BodyPosition untuk menarik part ke pusat Black Hole
             local AlignPosition = Instance.new("AlignPosition", v)
             local Attachment2 = Instance.new("Attachment", v)
             AlignPosition.MaxForce = math.huge
@@ -97,6 +98,7 @@ end
 local function toggleBlackHole()
     blackHoleActive = not blackHoleActive
     if blackHoleActive then
+        -- Mengaktifkan efek Black Hole untuk menarik part
         for _, v in next, Workspace:GetDescendants() do
             ForcePart(v)
         end
