@@ -5,9 +5,9 @@ local Workspace = game:GetService("Workspace")
 
 local angle = 1
 local radius = 10
-local maxRadius = 200 -- Meningkatkan radius maksimum ke 200
+local maxRadius = 280 -- Meningkatkan radius maksimum ke 200
 local blackHoleActive = false
-local blackHoleRange = 10000 -- Jarak efek Black Hole
+local blackHoleRange = 1000000 -- Jarak efek Black Hole
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
