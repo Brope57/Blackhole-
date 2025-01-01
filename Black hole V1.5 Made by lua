@@ -6,8 +6,9 @@ local LocalPlayer = Players.LocalPlayer
 local angle = 1
 local radius = 10
 local maxRadius = 250 -- Radius maksimum black hole
-local blackHoleRange = 1000000 -- Jarak efek Black Hole
+local blackHoleRange = 9000000 -- Jarak efek Black Hole
 local blackHoleActive = false
+local frozenParts = {} -- Menyimpan part yang dibekukan
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -73,17 +74,23 @@ local function ForcePart(v)
             end
             v.CanCollide = false
             
-            local Torque = Instance.new("Torque", v)
-            Torque.Torque = Vector3.new(1000000, 1000000, 1000000)
+            -- Menambahkan BodyPosition agar part tidak kembali ke tempat asal
             local AlignPosition = Instance.new("AlignPosition", v)
             local Attachment2 = Instance.new("Attachment", v)
-            Torque.Attachment0 = Attachment2
             AlignPosition.MaxForce = math.huge
             AlignPosition.MaxVelocity = math.huge
             AlignPosition.Responsiveness = 500
             AlignPosition.Attachment0 = Attachment2
             AlignPosition.Attachment1 = Attachment1
+            frozenParts[v] = AlignPosition  -- Menyimpan objek yang dibekukan
         end
+    end
+end
+
+local function unfreezePart(v)
+    if frozenParts[v] then
+        frozenParts[v]:Destroy() -- Menghapus AlignPosition dan melepaskan objek
+        frozenParts[v] = nil
     end
 end
 
@@ -111,6 +118,10 @@ local function toggleBlackHole()
             end
         end)
     else
+        -- Ketika Black Hole dimatikan, part tetap beku di tempat terakhir
+        for part, _ in pairs(frozenParts) do
+            unfreezePart(part)
+        end
         Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
 end
