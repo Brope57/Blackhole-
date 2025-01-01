@@ -2,52 +2,80 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local LocalPlayer = Players.LocalPlayer
 local angle = 1
 local radius = 10
-local maxRadius = 300
+local maxRadius = 250 -- Meningkatkan radius maksimum ke 200
 local blackHoleActive = false
-local blackHoleRange = 1000000000
+local blackHoleRange = 100000000 -- Jarak efek Black Hole
+local simulationDistance = 100000000 -- Simulation distance
 
-local function setupBlackHoleAttachment()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+-- Black hole anchor setup
+local blackHoleAnchor = Instance.new("Part")
+blackHoleAnchor.Anchored = true
+blackHoleAnchor.CanCollide = false
+blackHoleAnchor.Transparency = 1
+blackHoleAnchor.Size = Vector3.new(1, 1, 1)
+blackHoleAnchor.Parent = Workspace
 
-    local Folder = Instance.new("Folder", Workspace)
-    local Part = Instance.new("Part", Folder)
-    local Attachment1 = Instance.new("Attachment", Part)
-    Part.Anchored = true
-    Part.CanCollide = false
-    Part.Transparency = 1
+local Attachment1 = Instance.new("Attachment", blackHoleAnchor)
 
-    return humanoidRootPart, Attachment1
+if not getgenv().Network then
+    getgenv().Network = {
+        BaseParts = {},
+        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
+    }
+
+    Network.RetainPart = function(part)
+        if typeof(part) == "Instance" and part:IsA("BasePart") and part:IsDescendantOf(Workspace) then
+            table.insert(Network.BaseParts, part)
+            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            part.CanCollide = false
+        end
+    end
+
+    local function EnablePartControl()
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(Players.LocalPlayer, "SimulationRadius", simulationDistance)
+            for _, part in pairs(Network.BaseParts) do
+                if part:IsDescendantOf(Workspace) then
+                    part.Velocity = Network.Velocity
+                end
+            end
+        end)
+    end
+
+    EnablePartControl()
 end
 
-local humanoidRootPart, Attachment1 = setupBlackHoleAttachment()
-
-local function ForcePart(part)
-    if part:IsA("Part") and not part.Anchored and not part.Parent:FindFirstChild("Humanoid") and not part.Parent:FindFirstChild("Head") and part.Name ~= "Handle" then
-        if (part.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then
-            for _, x in ipairs(part:GetChildren()) do
-                if x:IsA("BodyMover") or x:IsA("Attachment") or x:IsA("AlignPosition") or x:IsA("Torque") then
+local function ForcePart(v)
+    if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
+        if (v.Position - blackHoleAnchor.Position).Magnitude <= blackHoleRange then -- Batas jarak Black Hole
+            for _, x in next, v:GetChildren() do
+                if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
                     x:Destroy()
                 end
             end
-
-            local Torque = Instance.new("Torque", part)
+            if v:FindFirstChild("Attachment") then
+                v:FindFirstChild("Attachment"):Destroy()
+            end
+            if v:FindFirstChild("AlignPosition") then
+                v:FindFirstChild("AlignPosition"):Destroy()
+            end
+            if v:FindFirstChild("Torque") then
+                v:FindFirstChild("Torque"):Destroy()
+            end
+            v.CanCollide = false
+            
+            local Torque = Instance.new("Torque", v)
             Torque.Torque = Vector3.new(1000000, 1000000, 1000000)
-
-            local AlignPosition = Instance.new("AlignPosition", part)
-            local Attachment2 = Instance.new("Attachment", part)
-
+            local AlignPosition = Instance.new("AlignPosition", v)
+            local Attachment2 = Instance.new("Attachment", v)
             Torque.Attachment0 = Attachment2
-            AlignPosition.Attachment0 = Attachment2
-            AlignPosition.Attachment1 = Attachment1
             AlignPosition.MaxForce = math.huge
             AlignPosition.MaxVelocity = math.huge
             AlignPosition.Responsiveness = 500
-
-            part.CanCollide = false
+            AlignPosition.Attachment0 = Attachment2
+            AlignPosition.Attachment1 = Attachment1
         end
     end
 end
@@ -55,13 +83,13 @@ end
 local function toggleBlackHole()
     blackHoleActive = not blackHoleActive
     if blackHoleActive then
-        for _, part in ipairs(Workspace:GetDescendants()) do
-            ForcePart(part)
+        for _, v in next, Workspace:GetDescendants() do
+            ForcePart(v)
         end
 
-        Workspace.DescendantAdded:Connect(function(part)
+        Workspace.DescendantAdded:Connect(function(v)
             if blackHoleActive then
-                ForcePart(part)
+                ForcePart(v)
             end
         end)
 
@@ -72,33 +100,35 @@ local function toggleBlackHole()
                 local offsetX = math.cos(angle) * radius
                 local offsetZ = math.sin(angle) * radius
 
-                Attachment1.WorldCFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
+                blackHoleAnchor.Position = blackHoleAnchor.Position + Vector3.new(offsetX, 0, offsetZ)
             end
         end)
     else
-        Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
+        blackHoleAnchor.Position = Vector3.new(0, -1000, 0)
     end
 end
-
-LocalPlayer.CharacterAdded:Connect(function()
-    humanoidRootPart, Attachment1 = setupBlackHoleAttachment()
-    if blackHoleActive then
-        toggleBlackHole()
-    end
-end)
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/miroeramaa/TurtleLib/main/TurtleUiLib.lua"))()
 local window = library:Window("Projeto LKB")
 
-window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
-    radius = Value
+window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value) -- Radius maksimum ditingkatkan ke 200
+   radius = Value
 end)
 
-window:Toggle("Blackhole", false, function(Value)
+window:Toggle("Blackhole", true, function(Value) -- Black hole aktif setelah script dijalankan
     if Value then
         toggleBlackHole()
     else
         blackHoleActive = false
+    end
+end)
+
+spawn(function()
+    while true do
+        RunService.RenderStepped:Wait()
+        if blackHoleActive then
+            angle = angle + math.rad(1)
+        end
     end
 end)
 
