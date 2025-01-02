@@ -5,8 +5,8 @@ local LocalPlayer = Players.LocalPlayer
 
 local angle = 1
 local radius = 10
-local maxRadius = 250
-local blackHoleRange = 6500
+local maxRadius = 200
+local blackHoleRange = 7000
 local blackHoleActive = false
 local attachedParts = {} 
 
