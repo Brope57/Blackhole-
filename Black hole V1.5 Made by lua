@@ -3,14 +3,14 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local angle = 10000
-local radius = 1000000000
+local angle = 1
+local radius = 100
 local maxRadius = 260 -- Radius maksimum black hole
-local maxRange = 100000 -- Nilai jarak maksimum awal
-local blackHoleRange = maxRange * 0.005 -- Mengatur jarak efek black hole menjadi 0.5% dari maxRange
+local maxRange = 10000 -- Radius magnet maksimum
+local blackHoleRange = 500 -- Jarak efek Black Hole
+local magnetRange = 100 -- Radius magnet default
 local blackHoleActive = false
-local attractPlayersActive = false -- Status fitur menarik pemain
-local playerAttractRadius = 100 -- Radius tarik pemain default
+local magnetActive = false -- Status fitur magnet
 local attachedParts = {} -- Menyimpan part yang sudah tertarik
 
 local function setupPlayer()
@@ -90,19 +90,12 @@ local function ForcePart(v)
     end
 end
 
-local function AttractPlayers()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local targetHRP = player.Character.HumanoidRootPart
-            local distance = (targetHRP.Position - humanoidRootPart.Position).Magnitude
-            if distance <= playerAttractRadius then
-                local AlignPosition = Instance.new("AlignPosition", targetHRP)
-                AlignPosition.MaxForce = math.huge
-                AlignPosition.MaxVelocity = math.huge
-                AlignPosition.Responsiveness = 1000
-                local Attachment2 = Instance.new("Attachment", targetHRP)
-                AlignPosition.Attachment0 = Attachment2
-                AlignPosition.Attachment1 = Attachment1
+local function MagnetParts()
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") then
+            local distance = (v.Position - humanoidRootPart.Position).Magnitude
+            if distance <= magnetRange and not attachedParts[v] then
+                ForcePart(v)
             end
         end
     end
@@ -128,8 +121,8 @@ local function toggleBlackHole()
                 local offsetZ = math.sin(angle) * radius
                 Attachment1.WorldCFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
 
-                if attractPlayersActive then
-                    AttractPlayers()
+                if magnetActive then
+                    MagnetParts()
                 end
             end
         end)
@@ -152,8 +145,12 @@ window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
    radius = Value
 end)
 
-window:Slider("Blackhole Range", 1, maxRange * 0.005, blackHoleRange, function(Value)
+window:Slider("Blackhole Range", 1, maxRange, blackHoleRange, function(Value)
     blackHoleRange = Value
+end)
+
+window:Slider("Magnet Range", 1, maxRange, magnetRange, function(Value)
+    magnetRange = Value
 end)
 
 window:Toggle("Blackhole", true, function(Value)
@@ -164,12 +161,8 @@ window:Toggle("Blackhole", true, function(Value)
     end
 end)
 
-window:Slider("Player Attract Radius", 1, 10000, playerAttractRadius, function(Value)
-    playerAttractRadius = Value
-end)
-
-window:Toggle("Attract Players", false, function(Value)
-    attractPlayersActive = Value
+window:Toggle("Magnet", false, function(Value)
+    magnetActive = Value
 end)
 
 toggleBlackHole()
