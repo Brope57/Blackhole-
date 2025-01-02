@@ -1,0 +1,217 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+local angle = 1
+local radius = 10
+local maxRadius = 250
+local blackHoleRange = 6500
+local blackHoleActive = false
+local attachedParts = {} 
+
+-- WalkSpeed & JumpPower
+local walkSpeed = 16
+local jumpPower = 50
+local walkSpeedActive = false
+local jumpPowerActive = false
+
+-- UI setup
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Brope57/GUI-Blackhole/refs/heads/main/GUI%20black%20hole%20Made%20by%20Lua%20v2"))()
+local window = library:Window("Project LUA 1.51")
+
+local function setupPlayer()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+    local Folder = Instance.new("Folder", Workspace)
+    local Part = Instance.new("Part", Folder)
+    local Attachment1 = Instance.new("Attachment", Part)
+    Part.Anchored = true
+    Part.CanCollide = false
+    Part.Transparency = 1
+
+    return humanoidRootPart, Attachment1
+end
+
+local humanoidRootPart, Attachment1 = setupPlayer()
+
+if not getgenv().Network then
+    getgenv().Network = {
+        BaseParts = {},
+        Velocity = Vector3.new(6500, 6500, 6500) -- Super extreme pulling velocity
+    }
+
+    Network.RetainPart = function(part)
+        if typeof(part) == "Instance" and part:IsA("BasePart") and part:IsDescendantOf(Workspace) then
+            table.insert(Network.BaseParts, part)
+            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            part.CanCollide = false
+        end
+    end
+
+    local function EnablePartControl()
+        LocalPlayer.ReplicationFocus = Workspace
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) -- Infinite simulation range
+            for _, part in pairs(Network.BaseParts) do
+                if part:IsDescendantOf(Workspace) then
+                    part.Velocity = Network.Velocity
+                end
+            end
+        end)
+    end
+
+    EnablePartControl()
+end
+
+local function ForcePart(v)
+    if v:IsA("Part") and not v.Anchored then
+        local parent = v.Parent
+        if parent and parent:IsA("Model") and parent:FindFirstChild("Humanoid") then
+            return -- Skip player parts
+        end
+
+        -- Tarik semua part yang berada dalam jangkauan black hole
+        if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then
+            -- Hapus semua constraint dan attachment yang ada pada part
+            for _, x in next, v:GetChildren() do
+                if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
+                    x:Destroy()
+                end
+            end
+
+            -- Mengabaikan constraint lainnya yang bisa menghalangi tarikan
+            if v:FindFirstChild("Attachment") then
+                v:FindFirstChild("Attachment"):Destroy()
+            end
+            if v:FindFirstChild("AlignPosition") then
+                v:FindFirstChild("AlignPosition"):Destroy()
+            end
+            if v:FindFirstChild("Torque") then
+                v:FindFirstChild("Torque"):Destroy()
+            end
+            v.CanCollide = false
+
+            -- Buat tarikan sangat kuat dan cepat
+            local AlignPosition = Instance.new("AlignPosition", v)
+            local Attachment2 = Instance.new("Attachment", v)
+            AlignPosition.MaxForce = math.huge -- Extreme force
+            AlignPosition.MaxVelocity = math.huge -- Extreme velocity for rapid pull
+            AlignPosition.Responsiveness = 1000000 -- Super high responsiveness to attract parts quickly
+            AlignPosition.Attachment0 = Attachment2
+            AlignPosition.Attachment1 = Attachment1
+
+            attachedParts[v] = true
+        end
+    end
+end
+
+local function toggleBlackHole()
+    blackHoleActive = not blackHoleActive
+    if blackHoleActive then
+        -- Tarik semua part dalam jangkauan black hole dengan kekuatan maksimal
+        for _, v in next, Workspace:GetDescendants() do
+            ForcePart(v)
+        end
+
+        Workspace.DescendantAdded:Connect(function(v)
+            if blackHoleActive then
+                ForcePart(v)
+            end
+        end)
+
+        spawn(function()
+            while blackHoleActive and RunService.RenderStepped:Wait() do
+                angle = angle + math.rad(5)  -- Tarikan sangat agresif
+                local offsetX = math.cos(angle) * radius
+                local offsetZ = math.sin(angle) * radius
+                Attachment1.WorldCFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
+            end
+        end)
+    else
+        Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
+    end
+end
+
+-- Notifikasi game
+local function sendNotification(title, text, delay)
+    task.wait(delay)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = title;
+        Text = text;
+        Duration = 5;
+    })
+end
+
+-- Notifikasi awal
+sendNotification("Game Script Loaded!", "The game script has been successfully loaded!", 1.5)
+
+-- Pengaturan Blackhole
+window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
+   radius = Value
+end)
+
+window:Slider("Blackhole Range", 1, 5000, blackHoleRange, function(Value)
+    blackHoleRange = Value
+end)
+
+window:Toggle("Blackhole", true, function(Value)
+    if Value then
+        toggleBlackHole()
+        sendNotification("Force All Parts", "All parts are now affected by the Black Hole!", 1.5)
+    else
+        blackHoleActive = false
+        sendNotification("Force All Parts", "No parts are affected by the Black Hole.", 1.5)
+    end
+end)
+
+-- Pengaturan lainnya
+local window2 = library:Window("Optional Settings")
+
+window2:Slider("Walk Speed", 1, 100, walkSpeed, function(Value)
+    walkSpeed = Value
+    if walkSpeedActive then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            humanoid.WalkSpeed = walkSpeed * 0.01 * 100
+        end
+    end
+end)
+
+window2:Toggle("Walk Speed On/Off", true, function(Value)
+    walkSpeedActive = Value
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+        humanoid.WalkSpeed = (walkSpeedActive and walkSpeed * 0.01 * 100) or 16
+    end
+end)
+
+-- Adjust Jump Power
+window2:Slider("Jump Power", 1, 100, jumpPower, function(Value)
+    jumpPower = Value
+    if jumpPowerActive then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            humanoid.JumpPower = jumpPower * 1.5
+        end
+    end
+end)
+
+window2:Toggle("Jump Power On/Off", true, function(Value)
+    jumpPowerActive = Value
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+        humanoid.JumpPower = (jumpPowerActive and jumpPower * 1.5) or 50
+    end
+end)
+
+-- Pemantauan respawn pemain
+LocalPlayer.CharacterAdded:Connect(function()
+    humanoidRootPart, Attachment1 = setupPlayer() -- Setup ulang untuk karakter baru
+    if blackHoleActive then
+        toggleBlackHole() -- Menyalakan black hole jika aktif
+    end
+end)
+
+toggleBlackHole() -- Mulai black hole jika perlu
