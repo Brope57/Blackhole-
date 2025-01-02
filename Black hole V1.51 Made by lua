@@ -18,7 +18,7 @@ local jumpPowerActive = false
 
 -- UI setup
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Brope57/GUI-Blackhole/refs/heads/main/GUI%20black%20hole%20Made%20by%20Lua%20v2"))()
-local window = library:Window("Project LUA 1.51")
+local window = library:Window("Project LUA")
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
