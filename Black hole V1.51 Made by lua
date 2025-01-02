@@ -193,7 +193,7 @@ window2:Slider("Jump Power", 1, 100, jumpPower, function(Value)
     if jumpPowerActive then
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-            humanoid.JumpPower = jumpPower * 1.5
+            humanoid.JumpPower = jumpPower * 2.5
         end
     end
 end)
