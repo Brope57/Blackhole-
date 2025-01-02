@@ -8,7 +8,7 @@ local radius = 10
 local maxRadius = 220
 local blackHoleRange = 8000
 local blackHoleActive = false
-local attachedParts = {} 
+local attachedParts = {}
 
 -- WalkSpeed & JumpPower
 local walkSpeed = 16
@@ -107,6 +107,25 @@ local function ForcePart(v)
     end
 end
 
+local function explodeParts()
+    -- Menambahkan efek ledakan pada part yang terhubung ke black hole
+    for part, _ in pairs(attachedParts) do
+        if part:IsA("BasePart") then
+            -- Memberikan dorongan eksplosif pada part
+            local bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000) -- Gaya sangat besar untuk dorongan
+            bodyVelocity.Velocity = (part.Position - humanoidRootPart.Position).unit * 500 -- Dorongan keras keluar
+            bodyVelocity.Parent = part
+
+            -- Hapus BodyVelocity setelah beberapa waktu agar efek dorongan selesai
+            game:GetService("Debris"):AddItem(bodyVelocity, 0.1)
+        end
+    end
+
+    -- Kosongkan daftar part yang terhubung setelah ledakan
+    attachedParts = {}
+end
+
 local function toggleBlackHole()
     blackHoleActive = not blackHoleActive
     if blackHoleActive then
@@ -130,6 +149,8 @@ local function toggleBlackHole()
             end
         end)
     else
+        -- Panggil ledakan saat black hole dimatikan
+        explodeParts()
         Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
 end
