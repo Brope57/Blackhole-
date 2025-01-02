@@ -5,8 +5,8 @@ local LocalPlayer = Players.LocalPlayer
 
 local angle = 1
 local radius = 10
-local maxRadius = 200
-local blackHoleRange = 7000
+local maxRadius = 220
+local blackHoleRange = 8000
 local blackHoleActive = false
 local attachedParts = {} 
 
@@ -39,7 +39,7 @@ local humanoidRootPart, Attachment1 = setupPlayer()
 if not getgenv().Network then
     getgenv().Network = {
         BaseParts = {},
-        Velocity = Vector3.new(6500, 6500, 6500) -- Super extreme pulling velocity
+        Velocity = Vector3.new(8000, 8000, 8000) -- Super extreme pulling velocity
     }
 
     Network.RetainPart = function(part)
@@ -98,7 +98,7 @@ local function ForcePart(v)
             local Attachment2 = Instance.new("Attachment", v)
             AlignPosition.MaxForce = math.huge -- Extreme force
             AlignPosition.MaxVelocity = math.huge -- Extreme velocity for rapid pull
-            AlignPosition.Responsiveness = 1000000 -- Super high responsiveness to attract parts quickly
+            AlignPosition.Responsiveness = 10000000 -- Super high responsiveness to attract parts quickly
             AlignPosition.Attachment0 = Attachment2
             AlignPosition.Attachment1 = Attachment1
 
@@ -152,7 +152,7 @@ window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
    radius = Value
 end)
 
-window:Slider("Blackhole Range", 1, 7000, blackHoleRange, function(Value)
+window:Slider("Blackhole Range", 1, 8000, blackHoleRange, function(Value)
     blackHoleRange = Value
 end)
 
