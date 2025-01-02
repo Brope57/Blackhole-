@@ -6,9 +6,11 @@ local LocalPlayer = Players.LocalPlayer
 local angle = 10000
 local radius = 1000000000
 local maxRadius = 260 -- Radius maksimum black hole
-local blackHoleRange = 1000000000 -- Jarak efek Black Hole
+local maxRange = 100000 -- Nilai jarak maksimum awal
+local blackHoleRange = maxRange * 0.005 -- Mengatur jarak efek black hole menjadi 0.5% dari maxRange
 local blackHoleActive = false
 local attachedParts = {} -- Menyimpan part yang sudah tertarik
+local rotationSpeed = 1 -- Kecepatan rotasi default
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -91,6 +93,21 @@ local function ForcePart(v)
     end
 end
 
+local function RotatePart()
+    for part, _ in pairs(attachedParts) do
+        if part:IsA("BasePart") and part.Parent then
+            -- Mengatur rotasi part berdasarkan kecepatan rotasi
+            part.CFrame = part.CFrame * CFrame.Angles(0, math.rad(rotationSpeed), 0)
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if blackHoleActive then
+        RotatePart()
+    end
+end)
+
 local function toggleBlackHole()
     blackHoleActive = not blackHoleActive
     if blackHoleActive then
@@ -134,8 +151,12 @@ window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
    radius = Value
 end)
 
-window:Slider("Blackhole Range", 1, 10000, blackHoleRange, function(Value)
+window:Slider("Blackhole Range", 1, maxRange * 0.005, blackHoleRange, function(Value)
     blackHoleRange = Value -- Mengatur jarak efek black hole
+end)
+
+window:Slider("Rotation Speed", 1, 20, rotationSpeed, function(Value)
+    rotationSpeed = Value -- Mengatur kecepatan rotasi part
 end)
 
 window:Toggle("Blackhole", true, function(Value)
