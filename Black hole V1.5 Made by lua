@@ -3,8 +3,8 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local angle = 0
-local radius = 100 -- Radius default untuk rotasi part di sekitar pemain
+local angle = 1
+local radius = 10 -- Radius default untuk rotasi part di sekitar pemain
 local maxRadius = 260 -- Radius maksimum black hole
 local maxRange = 100000 -- Nilai jarak maksimum awal
 local blackHoleRange = maxRange * 0.005 -- Mengatur jarak efek black hole menjadi 0.5% dari maxRange
