@@ -3,14 +3,14 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local angle = 10000
-local radius = 1000000000
+local angle = 0
+local radius = 100 -- Radius default untuk rotasi part di sekitar pemain
 local maxRadius = 260 -- Radius maksimum black hole
 local maxRange = 100000 -- Nilai jarak maksimum awal
 local blackHoleRange = maxRange * 0.005 -- Mengatur jarak efek black hole menjadi 0.5% dari maxRange
 local blackHoleActive = false
-local attachedParts = {} -- Menyimpan part yang sudah tertarik
 local rotationSpeed = 1 -- Kecepatan rotasi default
+local attachedParts = {} -- Menyimpan part yang sudah tertarik
 
 local function setupPlayer()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -28,90 +28,41 @@ end
 
 local humanoidRootPart, Attachment1 = setupPlayer()
 
-if not getgenv().Network then
-    getgenv().Network = {
-        BaseParts = {},
-        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
-    }
-
-    Network.RetainPart = function(part)
-        if typeof(part) == "Instance" and part:IsA("BasePart") and part:IsDescendantOf(Workspace) then
-            table.insert(Network.BaseParts, part)
-            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            part.CanCollide = false
-        end
-    end
-
-    local function EnablePartControl()
-        LocalPlayer.ReplicationFocus = Workspace
-        RunService.Heartbeat:Connect(function()
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) -- Meningkatkan jarak simulasi agar objek jauh tetap disimulasikan
-            for _, part in pairs(Network.BaseParts) do
-                if part:IsDescendantOf(Workspace) then
-                    part.Velocity = Network.Velocity
-                end
-            end
-        end)
-    end
-
-    EnablePartControl()
-end
-
 local function ForcePart(v)
     if v:IsA("Part") and not v.Anchored and not v.Parent:FindFirstChild("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
         -- Menghitung jarak antara part dengan posisi Black Hole
         if (v.Position - humanoidRootPart.Position).Magnitude <= blackHoleRange then
-            -- Menghapus gaya dan pengaruh lainnya dari part
             for _, x in next, v:GetChildren() do
                 if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") or x:IsA("RocketPropulsion") then
                     x:Destroy()
                 end
             end
-            if v:FindFirstChild("Attachment") then
-                v:FindFirstChild("Attachment"):Destroy()
-            end
-            if v:FindFirstChild("AlignPosition") then
-                v:FindFirstChild("AlignPosition"):Destroy()
-            end
-            if v:FindFirstChild("Torque") then
-                v:FindFirstChild("Torque"):Destroy()
-            end
             v.CanCollide = false
-            
-            -- Menarik part ke pusat Black Hole dengan responsif yang lebih tinggi
-            local AlignPosition = Instance.new("AlignPosition", v)
-            local Attachment2 = Instance.new("Attachment", v)
-            AlignPosition.MaxForce = math.huge
-            AlignPosition.MaxVelocity = math.huge
-            AlignPosition.Responsiveness = 1000 -- Meningkatkan responsiveness
-            AlignPosition.Attachment0 = Attachment2
-            AlignPosition.Attachment1 = Attachment1
-
-            -- Menyimpan part yang sudah tertarik agar tidak kembali
             attachedParts[v] = true
         end
     end
 end
 
-local function RotatePart()
+local function RotatePartsAroundPlayer()
+    angle = angle + rotationSpeed * math.rad(1) -- Kecepatan rotasi dikalikan dengan radian
     for part, _ in pairs(attachedParts) do
         if part:IsA("BasePart") and part.Parent then
-            -- Mengatur rotasi part berdasarkan kecepatan rotasi
-            part.CFrame = part.CFrame * CFrame.Angles(0, math.rad(rotationSpeed), 0)
+            local offsetX = math.cos(angle) * radius
+            local offsetZ = math.sin(angle) * radius
+            part.CFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
         end
     end
 end
 
 RunService.RenderStepped:Connect(function()
     if blackHoleActive then
-        RotatePart()
+        RotatePartsAroundPlayer()
     end
 end)
 
 local function toggleBlackHole()
     blackHoleActive = not blackHoleActive
     if blackHoleActive then
-        -- Mengaktifkan efek Black Hole untuk menarik part
         for _, v in next, Workspace:GetDescendants() do
             ForcePart(v)
         end
@@ -121,19 +72,6 @@ local function toggleBlackHole()
                 ForcePart(v)
             end
         end)
-
-        spawn(function()
-            while blackHoleActive and RunService.RenderStepped:Wait() do
-                angle = angle + math.rad(2)
-
-                local offsetX = math.cos(angle) * radius
-                local offsetZ = math.sin(angle) * radius
-
-                Attachment1.WorldCFrame = humanoidRootPart.CFrame * CFrame.new(offsetX, 0, offsetZ)
-            end
-        end)
-    else
-        Attachment1.WorldCFrame = CFrame.new(0, -1000, 0)
     end
 end
 
@@ -152,7 +90,7 @@ window:Slider("Radius Blackhole", 1, maxRadius, 10, function(Value)
 end)
 
 window:Slider("Blackhole Range", 1, maxRange * 0.005, blackHoleRange, function(Value)
-    blackHoleRange = Value -- Mengatur jarak efek black hole
+    blackHoleRange = Value
 end)
 
 window:Slider("Rotation Speed", 1, 20, rotationSpeed, function(Value)
